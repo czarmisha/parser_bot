@@ -1,9 +1,9 @@
 import os
-from xmlrpc.client import Boolean
-from dotenv import load_dotenv
 import logging
 import requests
+import csv
 from bs4 import BeautifulSoup
+from dotenv import load_dotenv
 
 from telegram import Update, ForceReply
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
@@ -81,6 +81,26 @@ def get_ticker_info(ticker):
     return ticker_info
 
 
+def get_trade_info(ticker, date='30.11.2021'):
+    """
+    •	Open, High, Low, Close дня
+    •	High, Low, Volume PreMarket (04:00 - 09:30)
+    """
+    with open(f"1m/{date}/{ticker}.csv", encoding='utf-8') as r_file:
+        file_reader = csv.reader(r_file, delimiter = ";")
+        hight_list = low_list = []
+        for i, row in enumerate(file_reader):
+            if i == 0:
+                continue
+            else:
+                if i == 1:
+                    # check time
+                    day_open = row[2]
+                if row[1] == '15:59:00-000':
+                    day_close = row[5]
+                print(row)
+    return {'test': 'asdasdadasdasdasdasdas'}
+
 def parse(update: Update, context: CallbackContext) -> None:
     """/parse"""
     update.message.reply_text('Ждите, идет загрузка')
@@ -88,9 +108,10 @@ def parse(update: Update, context: CallbackContext) -> None:
     tickers_info = {}
     for ticker in tickers:
         info = get_ticker_info(ticker)
-        tickers_info[ticker] = info
+        trade_info = get_trade_info(ticker)
+        tickers_info[ticker] = {**info, **trade_info}
+        break
     print(tickers_info)
-
 
 def main() -> None:
     """Start the bot."""
