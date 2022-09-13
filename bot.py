@@ -1,6 +1,7 @@
 from datetime import datetime
 import os
 import logging
+from unittest import expectedFailure
 import requests
 import csv
 from bs4 import BeautifulSoup
@@ -27,7 +28,7 @@ def start(update: Update, context: CallbackContext) -> None:
     """Send a message when the command /start is issued."""
     user = update.effective_user
     update.message.reply_markdown_v2(
-        fr'Hi {user.mention_markdown_v2()}\!',
+        fr'Hi {user.mention_markdown_v2()}\!\npress /parse',
     )
 
 def get_tickers():
@@ -142,7 +143,7 @@ def create_file(tickers_info):
 
 def parse(update: Update, context: CallbackContext) -> None:
     """/parse"""
-    update.message.reply_text('Ждите, идет загрузка')
+    update.message.reply_text('Теперь надо подождать')
     tickers = get_tickers()
     tickers_info = {}
     for ticker in tickers:
@@ -150,9 +151,13 @@ def parse(update: Update, context: CallbackContext) -> None:
         trade_info = get_trade_info(ticker)
         tickers_info[ticker] = {**info, **trade_info}
     file_name = create_file(tickers_info)
-    with open(f"output/{file_name}", "rb") as file:
-        # f = file.read()
-        context.bot.send_document(update.effective_chat.id, file)
+    try:
+        with open(f"output/{file_name}", "rb") as file:
+            # f = file.read()
+            context.bot.send_document(update.effective_chat.id, file)
+    except Exception:
+        update.message.reply_text('Произошла ошибка')
+
 
 def main() -> None:
     """Start the bot."""
