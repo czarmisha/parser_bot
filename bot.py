@@ -1,3 +1,4 @@
+from datetime import datetime
 import os
 import logging
 import requests
@@ -88,17 +89,27 @@ def get_trade_info(ticker, date='30.11.2021'):
     """
     with open(f"1m/{date}/{ticker}.csv", encoding='utf-8') as r_file:
         file_reader = csv.reader(r_file, delimiter = ";")
-        hight_list = low_list = []
+        day_high = premarket_high = 0.0
+        day_low = premarket_low = 100000.0
+        day_open = day_close = ''
+        premarket_volume = 0
         for i, row in enumerate(file_reader):
-            if i == 0:
-                continue
-            else:
-                if i == 1:
-                    # check time
+            if not i == 0:
+                row_datetime = datetime.strptime(row[0] + ' ' + row[1][:5], '%d.%m.%Y %H:%M')
+                opening_datetime = datetime.strptime(row[0] + ' 09:30', '%d.%m.%Y %H:%M')
+                closing_datetime = datetime.strptime(row[0] + ' 16:00', '%d.%m.%Y %H:%M')
+                premarket_datetime = datetime.strptime(row[0] + ' 04:00', '%d.%m.%Y %H:%M')
+                if not opening_datetime >= row_datetime and not day_open:
                     day_open = row[2]
                 if row[1] == '15:59:00-000':
                     day_close = row[5]
-                print(row)
+                if row_datetime >= opening_datetime and row_datetime < closing_datetime:
+                    day_high = float(row[3]) if float(row[3]) > day_high else day_high
+                    day_low = float(row[4]) if float(row[4]) < day_low else day_low
+                if row_datetime >= premarket_datetime and row_datetime < opening_datetime:
+                    premarket_high = float(row[3]) if float(row[3]) > premarket_high else premarket_high
+                    premarket_low = float(row[4]) if float(row[4]) < premarket_low else premarket_low
+                    premarket_volume += float(row[6])
     return {'test': 'asdasdadasdasdasdasdas'}
 
 def parse(update: Update, context: CallbackContext) -> None:
