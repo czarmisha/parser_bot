@@ -1,4 +1,5 @@
 1m/
+output/
 venv/
 .env
 documentation.docx
